@@ -12,7 +12,7 @@ invoices during loan approvals. This tool is intended to automate those checks.
 - Validates an ABN's format locally using the official checksum
 
 ## Tech
-TypeScript, Node 24 (native type stripping, no build step).
+TypeScript, Node 24.
 
 ## Getting started
 Prerequisites: Node 24+
