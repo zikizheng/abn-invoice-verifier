@@ -1,28 +1,12 @@
 {
   "name": "abn-invoice-verifier",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "dev": "node --watch src/index.ts",
-    "test": "node --test",
-    "typecheck": "tsc --noEmit"
-  },
-  "keywords": [],
+  "private": true,
   "author": "Ziki Zheng",
   "license": "ISC",
-  "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^26.1.1",
-    "typescript": "^7.0.2"
-  },
-  "dependencies": {
-    "@fastify/cors": "^11.3.0",
-    "better-sqlite3": "^12.11.1",
-    "fastify": "^5.10.0"
-  },
-  "allowScripts": {
-    "better-sqlite3@12.11.1": true
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "test:server": "npm --prefix server test",
+    "dev:web": "npm --prefix web run dev"
   }
 }
