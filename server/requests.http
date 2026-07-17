@@ -1,0 +1,24 @@
+### Clean invoice — should be approved
+POST http://localhost:3000/api/verify
+Content-Type: application/json
+
+{
+  "supplierName": "Australian Taxation Office",
+  "abn": "51824753556",
+  "amount": 1200,
+  "gstCharged": true
+}
+
+### Name mismatch — should be flagged for review
+POST http://localhost:3000/api/verify
+Content-Type: application/json
+
+{
+  "supplierName": "Dodgy Staging Co",
+  "abn": "51824753556",
+  "amount": 1200,
+  "gstCharged": true
+}
+
+### List everything processed so far
+GET http://localhost:3000/api/invoices
