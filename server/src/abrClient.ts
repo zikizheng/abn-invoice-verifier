@@ -20,7 +20,11 @@ export class StubAbrClient implements AbrClient {
 }
 
 export class HttpAbrClient implements AbrClient {
-  constructor(private guid: string) {}
+  private guid: string;
+
+  constructor(guid: string) {
+    this.guid = guid;
+  }
 
   async lookup(_abn: string): Promise<AbnRecord | null> {
     throw new Error("Not implemented yet");
