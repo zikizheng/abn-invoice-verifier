@@ -1,9 +1,4 @@
-export interface AbnRecord {
-  abn: string;
-  entityName: string;
-  status: "Active" | "Cancelled";
-  gstRegistered: boolean;
-}
+import type { AbnRecord } from "../../shared/types.ts";
 
 export interface AbrClient {
   lookup(abn: string): Promise<AbnRecord | null>;
