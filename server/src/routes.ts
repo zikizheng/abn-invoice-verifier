@@ -16,7 +16,7 @@ const client: AbrClient =
     })();
 
 export function registerRoutes(app: FastifyInstance) {
-    app.post("/api/verify", async (request, reply) => {
+    app.post("/api/invoices", async (request, reply) => {
         const invoice = request.body as Invoice;
 
         if (
