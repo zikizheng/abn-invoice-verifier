@@ -23,7 +23,6 @@ export function registerRoutes(app: FastifyInstance) {
             !invoice ||
             typeof invoice.supplierName !== "string" ||
             typeof invoice.abn !== "string" ||
-            typeof invoice.entityName !== "string" ||
             typeof invoice.amount !== "number" ||
             typeof invoice.gstCharged !== "boolean"
         ) {
