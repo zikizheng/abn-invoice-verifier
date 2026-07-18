@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { verifyInvoice } from "./rules.ts";
 import type { AbnRecord, Invoice } from "../../shared/types.ts";
 
+/** ISO date N days before today. */
+function daysAgo(n: number): string {
+    return new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+}
+
 const activeRecord: AbnRecord = {
     abn: "51824753556",
     entityName: "Acme Staging Pty Ltd",
@@ -18,7 +23,7 @@ const baseInvoice: Invoice = {
 };
 
 test("clean invoice is approved", () => {
-    const r = verifyInvoice(baseInvoice, activeRecord);
+    const r = verifyInvoice({ ...baseInvoice, invoiceDate: daysAgo(30), invoiceNumber: "1" }, activeRecord);
     assert.equal(r.decision, "approved");
     assert.equal(r.flags.length, 0);
 });
@@ -48,4 +53,26 @@ test("malformed ABN is rejected before any lookup", () => {
 test("valid but unregistered ABN is not found", () => {
     const r = verifyInvoice(baseInvoice, null);
     assert.ok(r.flags.some((f) => f.code === "ABN_NOT_FOUND"));
+});
+
+test("a recent invoice date raises no flag", () => {
+    const r = verifyInvoice({ ...baseInvoice, invoiceDate: daysAgo(30), invoiceNumber: "1" }, activeRecord);
+    assert.equal(r.decision, "approved");
+});
+
+test("an invoice older than the threshold is flagged for review", () => {
+    const r = verifyInvoice({ ...baseInvoice, invoiceDate: daysAgo(200) }, activeRecord);
+    assert.equal(r.decision, "review");
+    assert.ok(r.flags.some((f) => f.code === "INVOICE_STALE"));
+});
+
+test("a missing invoice date is flagged for review", () => {
+    const r = verifyInvoice(baseInvoice, activeRecord);   // no invoiceDate
+    assert.equal(r.decision, "review");
+    assert.ok(r.flags.some((f) => f.code === "DATE_MISSING"));
+});
+
+test("an unparseable invoice date is flagged", () => {
+    const r = verifyInvoice({ ...baseInvoice, invoiceDate: "next Tuesday" }, activeRecord);
+    assert.ok(r.flags.some((f) => f.code === "DATE_UNPARSEABLE"));
 });

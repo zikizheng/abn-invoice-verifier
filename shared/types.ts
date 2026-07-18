@@ -10,6 +10,8 @@ export interface Invoice {
     abn: string;
     amount: number;
     gstCharged: boolean;
+    invoiceNumber?: string;
+    invoiceDate?: string;
 }
 
 export type Decision = "approved" | "review" | "rejected"
@@ -33,4 +35,15 @@ export interface StoredInvoice extends Invoice {
     decision: VerificationResult["decision"];
     flags: VerificationResult["flags"];
     checkedAt: string;
+}
+
+export interface DraftInvoice {
+    supplierName: string | null;
+    abn: string | null;
+    amount: number | null;
+    gstCharged: boolean | null;
+    invoiceNumber: string | null;
+    invoiceDate: string | null;
+    missing: string[];
+    lowConfidence: string[];
 }

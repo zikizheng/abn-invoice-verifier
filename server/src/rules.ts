@@ -3,6 +3,8 @@ import type { AbnRecord, Invoice, VerificationResult, Flag } from "../../shared/
 
 /** How similar two business names must be to count as a match (0 - 1). */
 const NAME_MATCH_THRESHOLD = 0.85;
+/** Invoices older than this are flagged for review. */
+const MAX_INVOICE_AGE_DAYS = 180;
 
 export function verifyInvoice(invoice: Invoice, record: AbnRecord | null): VerificationResult{
     const flags: Flag[] = [];
@@ -53,10 +55,52 @@ export function verifyInvoice(invoice: Invoice, record: AbnRecord | null): Verif
             severity: "error",
         });
     }
+
+    // Rule 6 — invoice date should be present, recent, and not in the future.
+    if (!invoice.invoiceDate) {
+    flags.push({
+        code: "DATE_MISSING",
+        message: "No invoice date.",
+        severity: "warning",
+    });
+    } else {
+    const invoiceTime = Date.parse(invoice.invoiceDate);
+
+    if (Number.isNaN(invoiceTime)) {
+        flags.push({
+        code: "DATE_UNPARSEABLE",
+        message: "Invoice date isn't a valid date.",
+        severity: "warning",
+        });
+    } else {
+        const ageDays = (Date.now() - invoiceTime) / 86_400_000;
+
+        if (ageDays < 0) {
+        flags.push({
+            code: "DATE_IN_FUTURE",
+            message: "Invoice is dated in the future.",
+            severity: "warning",
+        });
+        } else if (ageDays > MAX_INVOICE_AGE_DAYS) {
+        flags.push({
+            code: "INVOICE_STALE",
+            message: `Invoice is ${Math.round(ageDays)} days old.`,
+            severity: "warning",
+        });
+        }
+    }
+    }
+
+    if (!invoice.invoiceNumber?.trim()) {
+    flags.push({
+        code: "INVOICE_NUMBER_MISSING",
+        message: "No invoice number.",
+        severity: "warning",
+        });
+    }
+    
     return finalise(flags, record);
 }
-
-
 function finalise(flags: Flag[], record: AbnRecord | null): VerificationResult {
     const decision: VerificationResult["decision"] = 
     flags.some((f) => f.severity === "error") ? "rejected"
@@ -81,7 +125,7 @@ function nameSimilarity(a: string, b: string): number {
     if (s1 === s2) return 1;
     if (!s1 || !s2) return 0;
     return 1 - levenshtein(s1, s2) / Math.max(s1.length, s2.length);
-}
+};
 
 function levenshtein(a: string, b: string): number{
     const dp = Array.from({ length: a.length + 1}, (_, i) => [i, ...Array(b.length).fill(0)]);

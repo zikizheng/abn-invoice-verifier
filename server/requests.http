@@ -19,15 +19,17 @@ Content-Type: application/json
     "amount": 1200,
     "gstCharged": true
 }
-###
-POST http://localhost:3000/api/verify
-Content-Type: application/json
 
-{
-    "supplierName": "CampaignAgent",
-    "abn": "33608962812",
-    "amount": 1000,
-    "gstCharged": true
-}
 ### List everything processed so far
 GET http://localhost:3000/api/invoices
+
+### Extract a draft invoice from a PDF
+POST http://localhost:3000/api/extract
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="file"; filename="invoice1.pdf"
+Content-Type: application/pdf
+
+< ./invoice1.pdf
+------boundary--

@@ -4,6 +4,13 @@ import { isValidAbn } from "../../shared/abn.ts";
 import { verifyInvoice } from "./rules.ts";
 import { HttpAbrClient, StubAbrClient, type AbrClient } from "./abrClient.ts";
 import { saveInvoice, listInvoices } from "./db.ts";
+import { StubExtractor, TextractExtractor, type InvoiceExtractor } from "./extractor.ts";
+
+const extractor: InvoiceExtractor = process.env.AWS_ACCESS_KEY_ID
+    ? new TextractExtractor(process.env.AWS_REGION ?? "ap-southeast-2")
+    : new StubExtractor();
+
+const ALLOWED_TYPES = ["application/pdf", "image/png", "image/jpeg"];
 
 const guid = process.env.ABR_GUID;
 if (!guid) throw new Error("ABR_GUID is not set: add it to server/.env");
@@ -46,4 +53,28 @@ export function registerRoutes(app: FastifyInstance) {
     });
 
     app.get("/api/invoices", async () => listInvoices());
+
+    app.post("/api/extract", async (request, reply) => {
+        const data = await request.file();
+        if (!data) return reply.status(400).send({ error: "No file uploaded." });
+
+        if (!ALLOWED_TYPES.includes(data.mimetype)) {
+            return reply.status(415).send({ error: "Upload a PDF, PNG, or JPEG."})
+        }
+
+        let buffer: Buffer;
+        try {
+            buffer = await data.toBuffer();
+        } catch {
+            return reply.status(413).send({ error: "File is too large (5 MB max)."});
+        }
+
+        try {
+            const draft = await extractor.extract(buffer);
+            return reply.send(draft);
+        } catch (err) {
+            request.log.error(err);
+            return reply.status(502).send({ error: "Couldn't read that document. Enter the details manually."});
+        }
+    })
 }

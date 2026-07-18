@@ -1,8 +1,11 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { registerRoutes } from "./routes.ts";
+import multipart from "@fastify/multipart";
 
 const app = Fastify({ logger: true });
+
+await app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } });
 
 await app.register(cors, { origin: true });
 registerRoutes(app);
