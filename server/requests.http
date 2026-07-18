@@ -1,4 +1,4 @@
-### Clean invoice — should be approved
+### Clean invoice: should be approved
 POST http://localhost:3000/api/verify
 Content-Type: application/json
 
@@ -9,7 +9,7 @@ Content-Type: application/json
     "gstCharged": true
 }
 
-### Name mismatch — should be flagged for review
+### Name mismatch: should be flagged for review
 POST http://localhost:3000/api/verify
 Content-Type: application/json
 
@@ -19,6 +19,15 @@ Content-Type: application/json
     "amount": 1200,
     "gstCharged": true
 }
+###
+POST http://localhost:3000/api/verify
+Content-Type: application/json
 
+{
+    "supplierName": "CampaignAgent",
+    "abn": "33608962812",
+    "amount": 1000,
+    "gstCharged": true
+}
 ### List everything processed so far
 GET http://localhost:3000/api/invoices

@@ -10,6 +10,7 @@ db.exec(`
     abn TEXT NOT NULL,
     amount REAL NOT NULL,
     gst_charged INTEGER NOT NULL,
+    registered_name TEXT NOT NULL,
     decision TEXT NOT NULL,
     flags TEXT NOT NULL,
     checked_at TEXT NOT NULL
@@ -18,27 +19,30 @@ db.exec(`
 
 export interface StoredInvoice extends Invoice {
     id: number;
+    registeredName: string | null;
     decision: VerificationResult["decision"];
     flags: VerificationResult["flags"];
     checkedAt: string;
 }
 
 const insertStmt = db.prepare(`
-  INSERT INTO invoices (supplier_name, abn, amount, gst_charged, decision, flags, checked_at)
-  VALUES (@supplierName, @abn, @amount, @gstCharged, @decision, @flags, @checkedAt)
+  INSERT INTO invoices (supplier_name, abn, amount, gst_charged, registered_name, decision, flags, checked_at)
+  VALUES (@supplierName, @abn, @amount, @gstCharged, @registeredName, @decision, @flags, @checkedAt)
 `);
 
 export function saveInvoice(invoice: Invoice, result: VerificationResult): StoredInvoice {
+    const registeredName = result.record?.entityName ?? null;
     const info = insertStmt.run({
         supplierName: invoice.supplierName,
         abn: invoice.abn,
         amount: invoice.amount,
         gstCharged: invoice.gstCharged ? 1 : 0,
+        registeredName,
         decision: result.decision,
         flags: JSON.stringify(result.flags),
         checkedAt: result.checkedAt,
     });
-    return { id: Number(info.lastInsertRowid), ...invoice, decision: result.decision, flags: result.flags, checkedAt: result.checkedAt };
+    return { id: Number(info.lastInsertRowid), ...invoice, registeredName, decision: result.decision, flags: result.flags, checkedAt: result.checkedAt };
 }
 
 const listStmt = db.prepare(`SELECT * FROM invoices ORDER BY id DESC LIMIT 100`);
@@ -50,6 +54,7 @@ export function listInvoices(): StoredInvoice[] {
         abn: row.abn,
         amount: row.amount,
         gstCharged: row.gst_charged === 1,
+        registeredName: row.registered_name,
         decision: row.decision,
         flags: JSON.parse(row.flags),
         checkedAt: row.checked_at,

@@ -1,12 +1,12 @@
 {
   "name": "abn-invoice-verifier",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "author": "Ziki Zheng",
   "license": "ISC",
   "scripts": {
     "dev:server": "npm --prefix server run dev",
-    "test:server": "npm --prefix server test",
+    "test:server": "npm test --prefix server",
     "dev:web": "npm --prefix web run dev"
   }
 }

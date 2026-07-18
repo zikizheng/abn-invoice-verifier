@@ -21,7 +21,7 @@ export function verifyInvoice(invoice: Invoice, record: AbnRecord | null): Verif
     if (record === null) {
         flags.push({
             code: "ABN_NOT_FOUND",
-            message: "ABN was nto found on the Australian Business Register.",
+            message: "ABN was not found on the Australian Business Register.",
             severity: "error",
         })
         return finalise(flags, record);
