@@ -1,5 +1,6 @@
 import Database from "better-sqlite3";
 import type { Invoice, VerificationResult } from "../../shared/types.ts";
+import type { StoredInvoice } from "../../shared/types.ts";
 
 const db = new Database("invoices.db");
 
@@ -16,14 +17,6 @@ db.exec(`
     checked_at TEXT NOT NULL
   )
 `);
-
-export interface StoredInvoice extends Invoice {
-    id: number;
-    registeredName: string | null;
-    decision: VerificationResult["decision"];
-    flags: VerificationResult["flags"];
-    checkedAt: string;
-}
 
 const insertStmt = db.prepare(`
   INSERT INTO invoices (supplier_name, abn, amount, gst_charged, registered_name, decision, flags, checked_at)

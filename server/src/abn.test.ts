@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isValidAbn } from "./abn.ts";
+import { isValidAbn } from "../../shared/abn.ts";
 
 test("valid ABNs pass", () => {
     assert.ok(isValidAbn("51824753556"));     // the ATO's own ABN

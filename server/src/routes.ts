@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Invoice, AbnRecord } from "../../shared/types.ts";
-import { isValidAbn } from "./abn.ts";
+import { isValidAbn } from "../../shared/abn.ts";
 import { verifyInvoice } from "./rules.ts";
 import { HttpAbrClient, StubAbrClient, type AbrClient } from "./abrClient.ts";
 import { saveInvoice, listInvoices } from "./db.ts";
