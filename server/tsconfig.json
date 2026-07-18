@@ -16,5 +16,5 @@
     "include": [
         "src",
         "../shared/types.ts"
-    ]
+, "src/abn.test.ts"    ]
 }

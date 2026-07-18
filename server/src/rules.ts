@@ -1,4 +1,4 @@
-import { isValidAbn } from "./abn.ts";
+import { isValidAbn } from "../../shared/abn.ts";
 import type { AbnRecord, Invoice, VerificationResult, Flag } from "../../shared/types.ts";
 
 /** How similar two business names must be to count as a match (0 - 1). */
