@@ -2,12 +2,14 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { registerRoutes } from "./routes.ts";
 import multipart from "@fastify/multipart";
+import rateLimit from "@fastify/rate-limit";
 
-const app = Fastify({ logger: true });
-
-await app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } });
+const app = Fastify({ logger: true, trustProxy: true });
 
 await app.register(cors, { origin: true });
+await app.register(multipart, { limits: { fileSize: 2 * 1024 * 1024 } });
+await app.register(rateLimit, { global: false });
+
 registerRoutes(app);
 
 try {
