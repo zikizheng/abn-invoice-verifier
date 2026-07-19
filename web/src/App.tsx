@@ -1,8 +1,9 @@
 import { useEffect, useState, type SyntheticEvent } from "react";
-import type { Invoice, StoredInvoice } from "../../shared/types";
+import type { Invoice, StoredInvoice, DraftInvoice } from "../../shared/types";
 import { verifyInvoice, listInvoices } from "./api";
 import "./App.css";
 import { isValidAbn } from './../../shared/abn';
+import UploadPanel from "./components/UploadPanel";
 
 const EMPTY: Invoice = { supplierName: "", abn: "", amount: 0, gstCharged: false };
 
@@ -14,15 +15,34 @@ export default function App() {
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [touched, setTouched] = useState<Partial<Record<keyof Invoice, boolean>>>({});
+    const [needsReview, setNeedsReview] = useState<string[]>([]);
+    const [sourceFile, setSourceFile] = useState<string | null>(null);
+
     const errors = validate(form);
     const isValid = Object.keys(errors).length === 0;
 
-    const showError = (field: keyof Invoice) => 
-        (touched[field] || form[field] !== EMPTY[field]) && errors[field];
-    
     useEffect(() => {
         listInvoices().then(setInvoices).catch((e) => setError(e.message));
     }, []);
+
+    function handleExtracted(draft: DraftInvoice, fileName: string) {
+        setForm({
+            supplierName: draft.supplierName ?? "",
+            abn: draft.abn ?? "",
+            amount: draft.amount ?? 0,
+            gstCharged: draft.gstCharged ?? false,
+            invoiceNumber: draft.invoiceNumber ?? "",
+            invoiceDate: draft.invoiceDate ?? "",
+        });
+        setNeedsReview([...draft.missing, ...draft.lowConfidence]);
+        setSourceFile(fileName);
+        setTouched({});
+        setError(null);
+    }
+
+    function clearReview(field: string) {
+        setNeedsReview((prev) => prev.filter((f) => f !== field));
+    }
 
     async function handleSubmit(e: SyntheticEvent) {
         e.preventDefault();
@@ -36,6 +56,8 @@ export default function App() {
             setInvoices((prev) => [result, ...prev]);
             setForm(EMPTY);
             setTouched({});
+            setSourceFile(null);
+            setNeedsReview([]);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Something went wrong.");
         } finally {
@@ -49,6 +71,15 @@ export default function App() {
 
     return (
         <main className="app">
+            <UploadPanel onExtracted={handleExtracted} />
+
+            {sourceFile && (
+                <p className="source-note">
+                    Pre-filled from <strong>{sourceFile}</strong>
+                    {needsReview.length > 0 && "check the highlighted fields before verifying."}
+                </p>
+            )}
+
             <p className="lede">Check a supplier invoice against the Australian Business Register.</p>
 
             <form className="card" onSubmit={handleSubmit}>
@@ -57,23 +88,40 @@ export default function App() {
                     <input
                         type="text"
                         value={form.supplierName}
-                        onChange={(e) => setForm({ ...form, supplierName: e.target.value })}
+                        className={needsReview.includes("supplierName") ? "needs-review" : ""}
+                        onChange={(e) => {
+                            setForm({ ...form, supplierName: e.target.value });
+                            clearReview("supplierName")
+                        }}
                         onBlur={() => markTouched("supplierName")}
-                        aria-invalid={!!showError("supplierName")}
                     />
-                        {showError("supplierName") && <span className="field-error">{errors.supplierName}</span>}
+                    {needsReview.includes("supplierName") && (
+                        <span className="review-hint">Could not read this reliably. Please confirm.</span>
+                    )}
+                    {touched.supplierName && errors.supplierName && (
+                        <span className="field-error">{errors.supplierName}</span>
+                    )}
                 </label>
                 <label>
                     ABN
                     <input
                         type="text"
                         inputMode="numeric"
-                        value={form.abn} placeholder="51 824 753 556"
-                        onChange={(e) => setForm({ ...form, abn: e.target.value.replace(/[^\d ]/g, "")})}
+                        value={form.abn}
+                        placeholder="51 824 753 556"
+                        className={needsReview.includes("abn") ? "needs-review" : ""}
+                        onChange={(e) => {
+                            setForm({ ...form, abn: e.target.value.replace(/[^\d ]/g, "") });
+                            clearReview("abn")
+                        }}
                         onBlur={() => markTouched("abn")}
-                        aria-invalid={!!showError("abn")}
                     />
-                    {showError("abn") && <span className="field-error">{errors.abn}</span>}
+                    {needsReview.includes("abn") && (
+                        <span className="review-hint">Could not read this reliably. Please confirm.</span>
+                    )}
+                    {touched.supplierName && errors.abn && (
+                        <span className="field-error">{errors.abn}</span>
+                    )}
                 </label>
                 <label>
                     Amount (AUD)
@@ -82,17 +130,33 @@ export default function App() {
                         min="0"
                         step="0.01"
                         value={form.amount || ""}
-                        onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
+                        className={needsReview.includes("amount") ? "needs-review" : ""}
+                        onChange={(e) => {
+                            setForm({ ...form, amount: Number(e.target.value) })
+                            clearReview("amount")
+                        }}
                         onBlur={() => markTouched("amount")}
-                        aria-invalid={!!showError("amount")}
                     />
-                    {showError("amount") && <span className="field-error">{errors.amount}</span>}
+                    {needsReview.includes("amount") && (
+                        <span className="review-hint">Could not read this reliably. Please confirm.</span>
+                    )}
+                    {touched.abn && errors.abn && <span className="field-error">{errors.amount}</span>}
                 </label>
                 <label className="checkbox">
-                    <input type="checkbox" checked={form.gstCharged}
-                        onChange={(e) => setForm({ ...form, gstCharged: e.target.checked })} />
+                    <input
+                        type="checkbox"
+                        checked={form.gstCharged}
+                        className={needsReview.includes("gstCharged") ? "needs-review" : ""}
+                        onChange={(e) => {
+                            setForm({ ...form, gstCharged: e.target.checked })
+                            clearReview("gstCharged")
+                        }}
+                    />
                     Invoice charges GST
                 </label>
+                    {needsReview.includes("gstCharged") && (
+                        <span className="review-hint">Could not read this reliably. Please confirm.</span>
+                    )}
                 <button type="submit" disabled={submitting}>
                     {submitting ? "Verifying..." : "Verify invoice"}
                 </button>

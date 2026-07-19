@@ -48,18 +48,18 @@ export function mapExpenseResponse(response: any): DraftInvoice {
         for (const type of types) {
             const matches = summary
                 .filter((f) => f?.Type?.Text === type && f?.ValueDetection?.Text?.trim())
-                .sort((a, b) => (b.ValueDetection.Confidence ?? 0) - (a.ValueDetection.Confidence ?? 0));
-                if (matches.length > 0) {
-                    return {
-                        text: matches[0].ValueDetection.Text.trim(),
-                        confidence: matches[0].ValueDetection.Confidence ?? 0,
-                    };
-                }
+                // .sort((a, b) => (b.ValueDetection.Confidence ?? 0) - (a.ValueDetection.Confidence ?? 0));
+            if (matches.length > 0) {
+                return {
+                    text: matches[0].ValueDetection.Text.trim(),
+                    confidence: matches[0].ValueDetection.Confidence ?? 0,
+                };
+            }
         }
         return null;
     };
 
-    const supplierField = bestField(["VENDOR_NAME", "SUPPLIER_NAME", ]);
+    const supplierField = bestField(["VENDOR_NAME", "SUPPLIER_NAME"]);
     const totalField = bestField(["TOTAL", "AMOUNT_DUE", "AMOUNT_PAID"]);
     const gstField = bestField(["TAX"]);
     const invoiceNumberField = bestField(["INVOICE_RECEIPT_ID"]);
@@ -74,10 +74,9 @@ export function mapExpenseResponse(response: any): DraftInvoice {
     const invoiceDate = parseInvoiceDate(invoiceDateField?.text ?? null);
     const abn = findAbn(allText);
 
-    console.log("total debug:", totalField);
     const gstCharged = detectGst(gst, amount, allText);
 
-    
+
     if (!supplierName) missing.push("supplierName");
     if (!abn) missing.push("abn");
     if (amount === null) missing.push("amount");
@@ -86,7 +85,7 @@ export function mapExpenseResponse(response: any): DraftInvoice {
     const lowConfidence: string[] = [];
     if (totalField && totalField.confidence < CONFIDENCE_THRESHOLD) lowConfidence.push("amount");
     if (supplierField && supplierField.confidence < CONFIDENCE_THRESHOLD) lowConfidence.push("supplierName");
-    
+
     return { supplierName, abn, amount, gstCharged, invoiceNumber, invoiceDate, missing, lowConfidence };
 }
 
@@ -105,18 +104,18 @@ export function parseMoney(value: string | null): number | null {
     const pattern = /(-?)\s*\$?\s*(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{1,2}))?/;
     const match = value.match(pattern);
     if (!match) return null;
-    
+
     const [, sign, whole, cents = "0"] = match;
     const n = Number.parseFloat(`${whole.replace(/,/g, "")}.${cents.padEnd(2, "0")}`);
     if (!Number.isFinite(n)) return null;
     return sign === "-" ? -n : n;
 }
 
-export function amountForLabel(text: string, label: RegExp): number | null{
+export function amountForLabel(text: string, label: RegExp): number | null {
     const lines = text.split("\n").map((l) => l.trim());
     for (let i = 0; i < lines.length; i++) {
         if (!label.test(lines[i])) continue;
-        const sameLine = parseMoney(lines[i].replace(label,""));
+        const sameLine = parseMoney(lines[i].replace(label, ""));
         if (sameLine !== null) return sameLine;
         if (i + 1 < lines.length) {
             const nextLine = parseMoney(lines[i + 1]);
@@ -161,7 +160,7 @@ function collectText(doc: any): string {
         if (f?.LabelDetection?.Text) parts.push(f.LabelDetection.Text);
         if (f?.ValueDetection?.Text) parts.push(f.ValueDetection.Text);
     }
-    for (const group of doc?.LineItemGroups?? []) {
+    for (const group of doc?.LineItemGroups ?? []) {
         for (const item of group?.LineItems ?? []) {
             for (const f of item?.LineItemExpenseFields ?? []) {
                 if (f?.LabelDetection?.Text) parts.push(f.LabelDetection.Text);
@@ -175,16 +174,16 @@ function collectText(doc: any): string {
 const DATE_FORMATS = [
     "yyyy-MM-dd",
     "dd/MM/yyyy", "d/M/yyyy",
-    "dd/MM/yy",   "d/M/yy",
+    "dd/MM/yy", "d/M/yy",
     "dd-MM-yyyy", "d-M-yyyy",
     "dd.MM.yyyy", "d.M.yyyy",
     "dd-MMM-yyyy", "d-MMM-yyyy",
-    "dd-MMM-yy",   "d-MMM-yy",
+    "dd-MMM-yy", "d-MMM-yy",
     "d MMMM yyyy", "d MMM yyyy", "dd MMM yyyy",
     "MMMM d, yyyy", "MMM d, yyyy",
 ];
 
-export function parseInvoiceDate(value:string | null): string | null {
+export function parseInvoiceDate(value: string | null): string | null {
     if (!value) return null;
     const cleaned = value.trim();
 

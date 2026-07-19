@@ -31,5 +31,5 @@ Content-Type: multipart/form-data; boundary=----boundary
 Content-Disposition: form-data; name="file"; filename="invoice1.pdf"
 Content-Type: application/pdf
 
-< ./invoice1.pdf
+< ./invoice.pdf
 ------boundary--

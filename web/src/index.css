@@ -5,9 +5,9 @@
 }
 
 @media (max-width: 600px) {
-  .col-amount {
-    display: none;
-  }
+    .col-amount {
+        display: none;
+    }
 }
 
 :root {
@@ -27,20 +27,20 @@ body {
 }
 
 .app {
-  width: 100%;
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 40px 20px;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
 }
 
 @media (max-width: 600px) {
-  .app {
-    padding: 24px 14px;
-  }
+    .app {
+        padding: 24px 14px;
+    }
 
-  h1 {
-    font-size: 22px;
-  }
+    h1 {
+        font-size: 22px;
+    }
 }
 
 h1 {
@@ -71,12 +71,13 @@ form.card label {
     font-size: 14px;
 }
 
-form.card input:not([type="checkbox"]) { 
-    padding: .55rem .65rem; 
+form.card input:not([type="checkbox"]) {
+    padding: .55rem .65rem;
     border: 1px solid var(--border);
-    border-radius: 8px; 
+    border-radius: 8px;
     font-size: .95rem;
-    width: 100%; }
+    width: 100%;
+}
 
 form.card label.checkbox {
     display: flex;
@@ -86,8 +87,8 @@ form.card label.checkbox {
 
 input,
 button {
-  min-height: 44px;
-  font-size: 16px;
+    min-height: 44px;
+    font-size: 16px;
 }
 
 button {
@@ -115,39 +116,40 @@ button:disabled {
 }
 
 @media (max-width: 600px) {
-  thead {
-    display: none;
-  }
+    thead {
+        display: none;
+    }
 
-  tr {
-    display: block;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: white;
-    padding: 12px;
-    margin-bottom: 12px;
-  }
+    tr {
+        display: block;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: white;
+        padding: 12px;
+        margin-bottom: 12px;
+    }
 
-  td {
-    display: block;
-    border: none;
-    padding: 4px 0;
-  }
+    td {
+        display: block;
+        border: none;
+        padding: 4px 0;
+    }
 
-  td::before {
-    content: attr(data-label);
-    display: block;
-    font-size: 12px;
-    color: var(--muted);
-  }
+    td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+    }
 }
+
 table {
     width: 100%;
     border-collapse: collapse;
 }
 
 .table-scroll {
-  overflow-x: auto;
+    overflow-x: auto;
 }
 
 th,
@@ -208,17 +210,61 @@ th {
 
 
 .field-error {
-  display: block;
-  margin-top: 4px;
-  color: var(--red);
-  font-size: 13px;
+    display: block;
+    margin-top: 4px;
+    color: var(--red);
+    font-size: 13px;
 }
 
 input[aria-invalid="true"] {
-  border-color: var(--red);
+    border-color: var(--red);
 }
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
-    -webkit-appearance: none; 
-    margin: 0; 
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    background: white;
+    padding: 28px 20px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.dropzone-active {
+    border-color: var(--text);
+    background: #fbfaf7;
+}
+
+.dropzone-text {
+    margin: 0 0 10px;
+    font-size: 15px;
+}
+
+.dropzone-hint {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.source-note {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 16px;
+}
+
+.needs-review {
+    border-color: var(--amber);
+    background: #fbf1dc;
+}
+
+.review-hint {
+    display: block;
+    margin-top: 4px;
+    color: var(--amber);
+    font-size: 13px;
 }
