@@ -24,7 +24,9 @@ const client: AbrClient =
         })();
 
 export function registerRoutes(app: FastifyInstance) {
-    app.post("/api/invoices", async (request, reply) => {
+    app.post("/api/invoices", {
+        config: { rateLimit: { max: 20, timeWindow: "1 minute" } },
+    }, async (request, reply) => {
         const invoice = request.body as Invoice;
 
         if (
