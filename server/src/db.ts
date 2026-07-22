@@ -18,9 +18,19 @@ db.exec(`
   )
 `);
 
+const existingColumns = new Set(
+    (db.prepare(`PRAGMA table_info(invoices)`).all() as { name: string }[]).map((c) => c.name)
+);
+if (!existingColumns.has("invoice_number")) {
+    db.exec(`ALTER TABLE invoices ADD COLUMN invoice_number TEXT`);
+}
+if (!existingColumns.has("invoice_date")) {
+    db.exec(`ALTER TABLE invoices ADD COLUMN invoice_date TEXT`);
+}
+
 const insertStmt = db.prepare(`
-  INSERT INTO invoices (supplier_name, abn, amount, gst_charged, registered_name, decision, flags, checked_at)
-  VALUES (@supplierName, @abn, @amount, @gstCharged, @registeredName, @decision, @flags, @checkedAt)
+  INSERT INTO invoices (supplier_name, abn, amount, gst_charged, registered_name, decision, flags, checked_at, invoice_number, invoice_date)
+  VALUES (@supplierName, @abn, @amount, @gstCharged, @registeredName, @decision, @flags, @checkedAt, @invoiceNumber, @invoiceDate)
 `);
 
 export function saveInvoice(invoice: Invoice, result: VerificationResult): StoredInvoice {
@@ -34,6 +44,8 @@ export function saveInvoice(invoice: Invoice, result: VerificationResult): Store
         decision: result.decision,
         flags: JSON.stringify(result.flags),
         checkedAt: result.checkedAt,
+        invoiceNumber: invoice.invoiceNumber ?? null,
+        invoiceDate: invoice.invoiceDate ?? null,
     });
     return { id: Number(info.lastInsertRowid), ...invoice, registeredName, decision: result.decision, flags: result.flags, checkedAt: result.checkedAt };
 }
@@ -51,5 +63,21 @@ export function listInvoices(): StoredInvoice[] {
         decision: row.decision,
         flags: JSON.parse(row.flags),
         checkedAt: row.checked_at,
+        invoiceNumber: row.invoice_number ?? undefined,
+        invoiceDate: row.invoice_date ?? undefined,
     }));
+}
+
+const deleteStmt = db.prepare(`DELETE FROM invoices WHERE id = ?`);
+
+export function deleteInvoice(id: number): boolean {
+    const info = deleteStmt.run(id);
+    return info.changes > 0;
+}
+
+const clearStmt = db.prepare(`DELETE FROM invoices`);
+
+export function clearInvoices(): number {
+    const info = clearStmt.run();
+    return info.changes;
 }

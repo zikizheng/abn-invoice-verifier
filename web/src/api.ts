@@ -51,3 +51,19 @@ export async function fetchQuota(): Promise<number> {
     const data = await res.json();
     return data.remaining;
 }
+
+export async function deleteInvoice(id: number): Promise<void> {
+    const res = await fetch(`/api/invoices/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Couldn't delete invoice (${res.status})`);
+    }
+}
+
+export async function clearInvoices(): Promise<void> {
+    const res = await fetch("/api/invoices", { method: "DELETE" });
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Couldn't clear invoices (${res.status})`);
+    }
+}

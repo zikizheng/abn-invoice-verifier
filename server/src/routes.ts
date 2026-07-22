@@ -3,7 +3,7 @@ import type { Invoice, AbnRecord } from "../../shared/types.ts";
 import { isValidAbn } from "../../shared/abn.ts";
 import { verifyInvoice } from "./rules.ts";
 import { HttpAbrClient, StubAbrClient, type AbrClient } from "./abrClient.ts";
-import { saveInvoice, listInvoices } from "./db.ts";
+import { saveInvoice, listInvoices, deleteInvoice, clearInvoices } from "./db.ts";
 import { StubExtractor, TextractExtractor, type InvoiceExtractor } from "./extractor.ts";
 import { consumeExtractionQuota, remainingQuota } from "./quota.ts";
 
@@ -56,6 +56,28 @@ export function registerRoutes(app: FastifyInstance) {
     });
 
     app.get("/api/invoices", async () => listInvoices());
+
+    app.delete("/api/invoices/:id", {
+        config: { rateLimit: { max: 20, timeWindow: "1 minute" } },
+    }, async (request, reply) => {
+        const id = Number((request.params as { id: string }).id);
+        if (!Number.isInteger(id)) {
+            return reply.status(400).send({ error: "Invalid invoice id." });
+        }
+
+        const deleted = deleteInvoice(id);
+        if (!deleted) {
+            return reply.status(404).send({ error: "Invoice not found." });
+        }
+        return reply.status(204).send();
+    });
+
+    app.delete("/api/invoices", {
+        config: { rateLimit: { max: 5, timeWindow: "1 minute" } },
+    }, async (_request, reply) => {
+        const count = clearInvoices();
+        return reply.send({ deleted: count });
+    });
 
     app.post("/api/extract", {
         config: { rateLimit: { max: 5, timeWindow: "1 minute" } },

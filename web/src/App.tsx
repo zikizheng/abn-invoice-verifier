@@ -1,6 +1,6 @@
 import { useEffect, useState, type SyntheticEvent } from "react";
 import type { Invoice, StoredInvoice, DraftInvoice } from "../../shared/types";
-import { verifyInvoice, listInvoices } from "./api";
+import { verifyInvoice, listInvoices, deleteInvoice, clearInvoices } from "./api";
 import "./App.css";
 import { isValidAbn } from './../../shared/abn';
 import UploadPanel from "./components/UploadPanel";
@@ -69,20 +69,74 @@ export default function App() {
         setTouched((prev) => ({ ...prev, [field]: true }));
     }
 
+    async function handleDelete(id: number) {
+        if (!window.confirm("Delete this invoice?")) return;
+        try {
+            await deleteInvoice(id);
+            setInvoices((prev) => prev.filter((inv) => inv.id !== id));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Couldn't delete that invoice.");
+        }
+    }
+
+    async function handleClearAll() {
+        if (!window.confirm("Delete all logged invoices? This can't be undone.")) return;
+        try {
+            await clearInvoices();
+            setInvoices([]);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Couldn't clear invoices.");
+        }
+    }
+
     return (
-        <main className="app">
-            <UploadPanel onExtracted={handleExtracted} />
+        <main>
+            <section className="panel panel-center" id="hero">
+                <div className="panel-inner">
+                    <h1>Docket</h1>
+                    <p className="lede">
+                        Check a supplier invoice against the Australian Business Register:
+                        confirm ABNs, GST status, and catch mismatches before you pay.
+                    </p>
+                    <a className="scroll-hint" href="#features">See how it works ↓</a>
+                </div>
+            </section>
 
-            {sourceFile && (
-                <p className="source-note">
-                    Pre-filled from <strong>{sourceFile}</strong>
-                    {needsReview.length > 0 && "check the highlighted fields before verifying."}
-                </p>
-            )}
+            <section className="panel panel-center" id="features">
+                <div className="panel-inner panel-inner-wide">
+                    <h2>What it checks</h2>
+                    <div className="feature-grid">
+                        <div className="feature-card">
+                            <h3>ABR lookup</h3>
+                            <p>Cross-checks every ABN against the live Australian Business Register.</p>
+                        </div>
+                        <div className="feature-card">
+                            <h3>GST detection</h3>
+                            <p>Flags invoices that charge GST they shouldn't, or miss it when they should.</p>
+                        </div>
+                        <div className="feature-card">
+                            <h3>Document scan</h3>
+                            <p>Upload a PDF or photo and we'll pre-fill the form for you.</p>
+                        </div>
+                    </div>
+                    <a className="scroll-hint" href="#tool">Try it ↓</a>
+                </div>
+            </section>
 
-            <p className="lede">Check a supplier invoice against the Australian Business Register.</p>
+            <section className="panel" id="tool">
+                <div className="app">
+                    <UploadPanel onExtracted={handleExtracted} />
 
-            <form className="card" onSubmit={handleSubmit}>
+                    {sourceFile && (
+                        <p className="source-note">
+                            Pre-filled from <strong>{sourceFile}</strong>
+                            {needsReview.length > 0 && "check the highlighted fields before verifying."}
+                        </p>
+                    )}
+
+                    <h2>Verify an invoice</h2>
+
+                    <form className="card" onSubmit={handleSubmit}>
                 <label>
                     Supplier Name
                     <input
@@ -121,6 +175,36 @@ export default function App() {
                     )}
                     {touched.supplierName && errors.abn && (
                         <span className="field-error">{errors.abn}</span>
+                    )}
+                </label>
+                <label>
+                    Invoice Number
+                    <input
+                        type="text"
+                        value={form.invoiceNumber ?? ""}
+                        className={needsReview.includes("invoiceNumber") ? "needs-review" : ""}
+                        onChange={(e) => {
+                            setForm({ ...form, invoiceNumber: e.target.value });
+                            clearReview("invoiceNumber")
+                        }}
+                    />
+                    {needsReview.includes("invoiceNumber") && (
+                        <span className="review-hint">Could not read this reliably. Please confirm.</span>
+                    )}
+                </label>
+                <label>
+                    Invoice Date
+                    <input
+                        type="date"
+                        value={form.invoiceDate ?? ""}
+                        className={needsReview.includes("invoiceDate") ? "needs-review" : ""}
+                        onChange={(e) => {
+                            setForm({ ...form, invoiceDate: e.target.value });
+                            clearReview("invoiceDate")
+                        }}
+                    />
+                    {needsReview.includes("invoiceDate") && (
+                        <span className="review-hint">Could not read this reliably. Please confirm.</span>
                     )}
                 </label>
                 <label>
@@ -163,14 +247,21 @@ export default function App() {
                 {error && <p className="error">{error}</p>}
             </form>
 
-            <h2>Processed invoices</h2>
+            <div className="section-header">
+                <h2>Processed invoices</h2>
+                {invoices.length > 0 && (
+                    <button type="button" className="clear-all-button" onClick={handleClearAll}>
+                        Clear all
+                    </button>
+                )}
+            </div>
             {invoices.length === 0 ? (
                 <p className="empty"> Nothing verified yet.</p>
             ) : (
                 <div className="tablescroll">
                     <table className="card">
                         <thead>
-                            <tr><th>Supplier Name</th><th>Registered Name</th><th>ABN</th><th>Amount</th><th>Decision</th><th>Flags</th></tr>
+                            <tr><th>Supplier Name</th><th>Registered Name</th><th>ABN</th><th>Invoice Number</th><th>Invoice Date</th><th>Amount</th><th>Decision</th><th>Flags</th><th></th></tr>
                         </thead>
                         <tbody>
                             {invoices.map((inv) => (
@@ -178,6 +269,8 @@ export default function App() {
                                     <td data-label="Supplier">{inv.supplierName}</td>
                                     <td data-label="Registered Name">{inv.registeredName}</td>
                                     <td data-label="ABN">{inv.abn}</td>
+                                    <td data-label="Invoice Number">{inv.invoiceNumber ?? <span className="muted">-</span>}</td>
+                                    <td data-label="Invoice Date">{inv.invoiceDate ?? <span className="muted">-</span>}</td>
                                     <td data-label="Amount">{inv.amount.toFixed(2)}</td>
                                     <td data-label="Decision"><span className={`badge badge-${inv.decision}`}>{inv.decision}</span></td>
                                     <td data-label="Flags">
@@ -191,12 +284,24 @@ export default function App() {
                                             </ul>
                                         )}
                                     </td>
+                                    <td data-label="">
+                                        <button
+                                            type="button"
+                                            className="delete-row-button"
+                                            aria-label="Delete invoice"
+                                            onClick={() => handleDelete(inv.id)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
             )}
+                </div>
+            </section>
         </main>
     )
 }
