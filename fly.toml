@@ -3,7 +3,7 @@
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'docket-r8iz7q'
+app = 'docket'
 primary_region = 'syd'
 
 [build]
