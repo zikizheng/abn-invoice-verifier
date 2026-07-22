@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import type { Invoice, VerificationResult } from "../../shared/types.ts";
 import type { StoredInvoice } from "../../shared/types.ts";
 
-export const db = new Database("invoices.db");
+export const db = new Database(process.env.DB_PATH ?? "invoices.db");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS invoices (
