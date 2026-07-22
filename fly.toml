@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for docket-r8iz7q on 2026-07-22T10:07:51Z
+# fly.toml app configuration file generated for docket-checker on 2026-07-22T10:31:02Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'docket'
+app = 'docket-checker'
 primary_region = 'syd'
 
 [build]
