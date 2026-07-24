@@ -294,6 +294,16 @@ export default function App() {
                                             Delete
                                         </button>
                                     </td>
+                                    <td data-label="">
+                                        <button
+                                            type="button"
+                                            className="delete-row-button"
+                                            aria-label="Delete invoice"
+                                            onClick={() => handleDelete(inv.id)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

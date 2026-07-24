@@ -5,7 +5,7 @@ import { verifyInvoice } from "./rules.ts";
 import { HttpAbrClient, StubAbrClient, type AbrClient } from "./abrClient.ts";
 import { saveInvoice, listInvoices, deleteInvoice, clearInvoices } from "./db.ts";
 import { StubExtractor, TextractExtractor, type InvoiceExtractor } from "./extractor.ts";
-import { consumeExtractionQuota, remainingQuota } from "./quota.ts";
+import { consumeExtractionQuota, consumeAbrLookupQuota, remainingQuota } from "./quota.ts";
 
 const extractor: InvoiceExtractor = process.env.AWS_ACCESS_KEY_ID
     ? new TextractExtractor(process.env.AWS_REGION ?? "ap-southeast-2")
@@ -34,7 +34,9 @@ export function registerRoutes(app: FastifyInstance) {
             typeof invoice.supplierName !== "string" ||
             typeof invoice.abn !== "string" ||
             typeof invoice.amount !== "number" ||
-            typeof invoice.gstCharged !== "boolean"
+            typeof invoice.gstCharged !== "boolean" ||
+            (invoice.invoiceNumber !== undefined && typeof invoice.invoiceNumber !== "string") ||
+            (invoice.invoiceDate !== undefined && typeof invoice.invoiceDate !== "string")
         ) {
             return reply.status(400).send({ error: "Invalid invoice payload." });
         }
@@ -42,6 +44,9 @@ export function registerRoutes(app: FastifyInstance) {
         // Only spend an ABR lookup if the ABN passes the local checksum.
         let record: AbnRecord | null = null;
         if (isValidAbn(invoice.abn)) {
+            if (!consumeAbrLookupQuota()) {
+                return reply.status(429).send({ error: "The daily ABN lookup limit for this demo has been reached: please try again tomorrow." });
+            }
             try {
                 record = await client.lookup(invoice.abn);
             } catch (err) {
@@ -50,7 +55,14 @@ export function registerRoutes(app: FastifyInstance) {
             }
         }
         const result = verifyInvoice(invoice, record);
-        const stored = saveInvoice(invoice, result);
+
+        let stored;
+        try {
+            stored = saveInvoice(invoice, result);
+        } catch (err) {
+            request.log.error(err);
+            return reply.status(500).send({ error: "Couldn't save that invoice: please try again." });
+        }
 
         return reply.send(stored);
     });
@@ -97,7 +109,7 @@ export function registerRoutes(app: FastifyInstance) {
         }
 
 
-        if (!consumeExtractionQuota()) {
+        if (!consumeExtractionQuota(request.ip)) {
             return reply.status(429).send({
                 error: "The daily scanning limit for this demo has been reached — enter the details manually, or try again tomorrow.",
             });
