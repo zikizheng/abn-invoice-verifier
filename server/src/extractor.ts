@@ -61,7 +61,7 @@ export function mapExpenseResponse(response: any): DraftInvoice {
 
     const supplierField = bestField(["VENDOR_NAME", "SUPPLIER_NAME"]);
     const totalField = bestField(["TOTAL", "AMOUNT_DUE", "AMOUNT_PAID"]);
-    const gstField = bestField(["TAX"]);
+    const gstField = bestField(["TAX", "GST"]);
     const invoiceNumberField = bestField(["INVOICE_RECEIPT_ID"]);
     const invoiceDateField = bestField(["INVOICE_RECEIPT_DATE"]);
 
